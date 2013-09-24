@@ -221,13 +221,13 @@ class Customers
   end
 end
 
-def run!(file_path, file_size_in_mb)
+def run!(file_path, file_size_in_mb, customers_size)
   @movie = Movie.new(
     File.expand_path(File.dirname(__FILE__) + '/movie_titles.csv')
   )
   @person = Person.new
   @cust = {}
-  @total_customers = 1_000
+  @total_customers = customers_size || 1000
 
   Benchmark.bm(50) do |bm|
     bm.report("generate hash of #{@total_customers} custormers") do
@@ -266,14 +266,18 @@ if __FILE__ == $0
   printf "Enter file size (MB): "
   file_size_in_mb = gets.chomp
 
-  printf "Enter the file path: "
+  printf "Enter the full path of the file (including filename): "
   file_path = gets.chomp
 
+  printf "Enter number of custormers to use: "
+  customers_size = gets.chomp
+
   raise "bad file size" unless file_size_in_mb =~ /^\d+$/
+  raise "bad customers size" unless customers_size =~ /^\d+$/
   dir_path = File.dirname(File.expand_path(file_path))
   unless File.directory?(dir_path) && File.writable?(dir_path)
     raise "bad file path"
   end
 
-  run! file_path, file_size_in_mb
+  run! file_path, file_size_in_mb, customers_size
 end
