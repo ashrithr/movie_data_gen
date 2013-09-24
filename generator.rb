@@ -227,7 +227,7 @@ def run!(file_path, file_size_in_mb, customers_size)
   )
   @person = Person.new
   @cust = {}
-  @total_customers = customers_size || 1000
+  @total_customers = customers_size.to_i || 1000
 
   Benchmark.bm(50) do |bm|
     bm.report("generate hash of #{@total_customers} custormers") do
