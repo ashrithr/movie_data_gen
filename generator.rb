@@ -223,7 +223,7 @@ end
 
 def run!(file_path, file_size_in_mb)
   @movie = Movie.new(
-    '/Users/ashrith/Development/movie_data_gen/movie_titles.csv'
+    File.expand_path(File.dirname(__FILE__) + '/movie_titles.csv')
   )
   @person = Person.new
   @cust = {}
