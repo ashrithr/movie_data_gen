@@ -31,17 +31,3 @@ ruby generator.rb
 ```
 
 This program generates data @ rate of ~ 1 Mbps
-
-**Intresting Benchmarks (Reason(s) for sticking with internal hash implementation)**:
-
-Time to generate 1 million hash entries:
-
-* Ruby hash = 3.5 secs
-* Redis = 91 secs
-* Postgres = 179 secs
-
-Time to lookup 1 million entires in hash:
-
-* Ruby hash = 1.35 seconds
-* Redis = 71 secs
-* Postgres = 141 secs
