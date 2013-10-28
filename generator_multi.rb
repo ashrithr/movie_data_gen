@@ -231,7 +231,7 @@ class Customers
   end
 end
 
-def generate!(file, file_size_in_mb)
+def generate!(file, file_size_in_mb, process_id, number_of_processes)
   file_size = 0
   File.open(File.expand_path(file), 'w') do |file|
     while file_size < file_size_in_mb.to_i * 1048576 # bytes in 1 MB
@@ -247,7 +247,9 @@ def generate!(file, file_size_in_mb)
       file.print string
       file_size += string.size
       mb = 1024.0 * 1024.0
-      print "\rSize (MB): #{(file_size/mb).round(2)}"
+      current_file_size = file_size/mb
+      print "\r%012.2f " % [current_file_size]
+      # print "\rProcess#{process_id} Size (MB): #{(file_size/mb).round(2)}"
     end
   end
   puts  
@@ -271,7 +273,8 @@ def run!(file_path, file_size_in_mb, customers_size, processes_count)
 
   time = Benchmark.measure do
     Parallel.map(1..processes_count.to_i) do |process|
-      generate!(File.join(file_path, "movie_#{process}.csv"), file_size_in_mb)
+      generate!(File.join(file_path, "movie_#{process}.csv"), file_size_in_mb, process, processes_count.to_i)
+      puts
     end
   end
 
@@ -295,8 +298,8 @@ if __FILE__ == $0
       options[:path] = path
     end
     options[:customers_size] = 10000
-    opts.on('-c', '--customers_size', 'Number of customers to use to generate the data, default: 10000') do |cc|
-      options[:customers_size] = customers_size
+    opts.on('-c', '--customers_size [num_of_customers]', 'Number of customers to use to generate the data, default: 10000') do |cc|
+      options[:customers_size] = cc
     end
     opts.on('-h', '--help', 'Display this screen') do
       puts opts

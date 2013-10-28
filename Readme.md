@@ -30,4 +30,8 @@ Generating the dataset:
 ruby generator.rb
 ```
 
-This program generates data @ rate of ~ 1 Mbps
+Some benchmarks on the program:
+
+* In memory hash representation of about 10 Million customer records takes ~1.5G
+* This program generates data @ rate of ~1Mbps (on SSD)
+
