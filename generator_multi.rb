@@ -231,7 +231,7 @@ class Customers
   end
 end
 
-def generate!(file, file_size_in_mb, process_id, number_of_processes)
+def generate!(file, file_size_in_mb)
   file_size = 0
   File.open(File.expand_path(file), 'w') do |file|
     while file_size < file_size_in_mb.to_i * 1048576 # bytes in 1 MB
@@ -249,10 +249,8 @@ def generate!(file, file_size_in_mb, process_id, number_of_processes)
       mb = 1024.0 * 1024.0
       current_file_size = file_size/mb
       print "\r%012.2f " % [current_file_size]
-      # print "\rProcess#{process_id} Size (MB): #{(file_size/mb).round(2)}"
     end
   end
-  puts  
 end
 
 def run!(file_path, file_size_in_mb, customers_size, processes_count)
@@ -261,7 +259,7 @@ def run!(file_path, file_size_in_mb, customers_size, processes_count)
   @movie = Movie.new(movie_data)
   @person = Person.new
   @cust = {}
-  @total_customers = customers_size.to_i || 1000
+  @total_customers = customers_size || 10000
 
   Benchmark.bm(50) do |bm|
     bm.report("Generate hash of #{@total_customers} custormers") do
@@ -271,9 +269,19 @@ def run!(file_path, file_size_in_mb, customers_size, processes_count)
     end
   end
 
+  # build final files per process
+  files_to_generate = []
+  file_path.split(',').each do |path|
+    processes_count.times do |process_id|
+      files_to_generate << File.join(path, "movie_#{process_id+1}.csv")
+    end
+  end
+
+  puts "[Debug]: Generating data to files #{files_to_generate.join(', ')}"
+
   time = Benchmark.measure do
-    Parallel.map(1..processes_count.to_i) do |process|
-      generate!(File.join(file_path, "movie_#{process}.csv"), file_size_in_mb, process, processes_count.to_i)
+    Parallel.map_with_index(files_to_generate) do |file_path, process_id|
+      generate!(file_path, file_size_in_mb)
       puts
     end
   end
@@ -294,7 +302,7 @@ if __FILE__ == $0
       options[:size_per_process] = size
     end
     options[:path] = "/tmp"
-    opts.on('-f', '--path [path]', 'Full path where the data should be generated to, default: /tmp') do |path|
+    opts.on('-l', '--list [path]', 'List of paths (comma seperated) where the data should be generated to, default: /tmp') do |path|
       options[:path] = path
     end
     options[:customers_size] = 10000
@@ -318,16 +326,20 @@ if __FILE__ == $0
       raise "required options --size" 
     end
 
-    puts options
+    puts "[Debug]: #{options}"
 
     # basic opts parse
     raise "bad file size" unless options[:size_per_process].to_s =~ /^\d+$/
     raise "bad customers size" unless options[:customers_size].to_s =~ /^\d+$/
-    dir_path = File.expand_path(options[:path])
-    if ! File.directory?(dir_path)
-      raise "bad file path"
-    elsif ! File.writable?(dir_path)
-      raise "path not writable"
+    options[:path].split(',').each do |path|
+      dir_path = File.expand_path(path)
+      if ! File.directory?(dir_path)
+        raise "bad '#{dir_path}' file path"
+      elsif ! File.writable?(dir_path)
+        raise "path '#{dir_path}' not writable"
+      else
+        puts "[Debug]: valid path '#{dir_path}'"
+      end
     end
   rescue OptionParser::InvalidOption, OptionParser::MissingArgument
     puts $!.to_s
@@ -335,5 +347,5 @@ if __FILE__ == $0
     exit
   end
 
-  run! options[:path], options[:size_per_process], options[:customers_size], options[:processes_count]
+  run! options[:path], options[:size_per_process].to_i, options[:customers_size].to_i, options[:processes_count].to_i
 end
